@@ -1,0 +1,94 @@
+name: cicd_sbb
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  PROJECT_NAME: sbb
+  AWS_REGION: ap-northeast-2
+  AWS_S3_BUCKET: ezen-github-actions-s3-bucket
+  AWS_CODE_DEPLOY_APPLICATION: sbb-deploy
+  AWS_CODE_DEPLOY_GROUP: sbb-deploy-group2
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+    
+    # (1) 기본 체크아웃 
+    - uses: actions/checkout@v4
+    
+    # (2) JDK 17 세팅
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+     
+     # 실행권한부여   
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+   
+    # (3) Gradle build (Test 제외)
+    - name: Build with Gradle
+      # uses: gradle/actions/setup-gradle@dbbdc275be76ac10734476cc723d82dfe7ec6eda # v3.4.2  
+      run: ./gradlew clean build -x test
+      # working-directory: ./${{ env.PROJECT_NAME }}  
+      
+    # (4) 전송할 파일을 담을 디렉토리 생성
+    - name: Make Directory for deliver
+      run: mkdir deploy
+
+    # (5) Jar 파일 Copy
+    - name: Copy Jar
+      run: cp build/libs/*.jar ./deploy/
+
+    # (6) appspec.yml Copy
+    - name: Copy appspec
+      run: cp ./appspec.yml ./deploy/
+
+    # (7) script files Copy
+    - name: Copy shell
+      run: cp ./scripts/* ./deploy/
+
+    # (8) 압축파일 생성
+    - name: Set NOW_DATETIME as env variable
+      run:
+        echo "NOW_DATETIME=$(date "+%Y-%m-%d-%aT%H.%M.%S" -d 9hours)" >> $GITHUB_ENV
+    - name: Set ZIP_FILE as env variable
+      run:
+        echo "ZIP_FILE=${PROJECT_NAME}_${NOW_DATETIME}" >> $GITHUB_ENV
+    - name: Make zip file
+      run: zip -r -qq -j ./${{ env.ZIP_FILE }}.zip ./deploy/*
+          
+    # (9) AWS 인증 (IAM 사용자 Access Key, Secret Key 활용)
+    - name: AWS credential 설정
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-region: ${{ env.AWS_REGION }}
+        aws-access-key-id: ${{ secrets.CICD_ACCESS_KEY }}
+        aws-secret-access-key: ${{ secrets.CICD_SECRET_KEY }}
+   
+    # (10) 압축파일을 S3 버킷에 업로드
+    - name: Upload to AWS S3
+      run: |
+        aws s3 cp \
+        --region ${{ env.AWS_REGION }} \
+        --acl private \
+        ./${{ env.ZIP_FILE }}.zip s3://${{ env.AWS_S3_BUCKET }}
+        
+     # 11번   
+    - name: EC2에 배포
+      run: aws deploy create-deployment --application-name ${{ env.AWS_CODE_DEPLOY_APPLICATION }} --deployment-config-name CodeDeployDefault.AllAtOnce --deployment-group-name ${{ env.AWS_CODE_DEPLOY_GROUP }} --s3-location bucket=$AWS_S3_BUCKET,key=${{env.ZIP_FILE}}.zip,bundleType=zip
+
+   
+    
+    
+      
