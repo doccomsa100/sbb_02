@@ -1,9 +1,11 @@
 package com.mysite.sbb.answer;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
+import com.mysite.sbb.DataNotFoundException;
 import com.mysite.sbb.question.Question;
 import com.mysite.sbb.user.SiteUser;
 
@@ -28,5 +30,21 @@ public class AnswerService {
 		answer.setAuthor(author);
 		
 		this.answerRepository.save(answer);
+	}
+	
+	// 질문글 삭제
+	public void delete(Answer answer) {
+		this.answerRepository.delete(answer);
+	}
+	
+	// 답변글 조회. 
+	public Answer getAnswer(Integer id) {
+		Optional<Answer> answer = this.answerRepository.findById(id);
+		if(answer.isPresent()) {
+			return answer.get();
+		}else {
+			throw new DataNotFoundException("answer not found");
+		}
+		
 	}
 }
