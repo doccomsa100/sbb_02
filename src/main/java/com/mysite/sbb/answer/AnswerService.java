@@ -32,12 +32,7 @@ public class AnswerService {
 		this.answerRepository.save(answer);
 	}
 	
-	// 질문글 삭제
-	public void delete(Answer answer) {
-		this.answerRepository.delete(answer);
-	}
-	
-	// 답변글 조회. 
+	// 답변글 삭제 또는 수정할 때 사용. 
 	public Answer getAnswer(Integer id) {
 		Optional<Answer> answer = this.answerRepository.findById(id);
 		if(answer.isPresent()) {
@@ -47,4 +42,19 @@ public class AnswerService {
 		}
 		
 	}
+		
+	
+	// 답변글 삭제
+	public void delete(Answer answer) {
+		this.answerRepository.delete(answer);
+	}
+	
+	// 수정하기
+	public void modify(Answer answer, String content) {
+		answer.setContent(content);
+		answer.setModifyDate(LocalDateTime.now());
+		this.answerRepository.save(answer);
+	}
+	
+	
 }

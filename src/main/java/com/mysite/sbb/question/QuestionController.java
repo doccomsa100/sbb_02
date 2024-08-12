@@ -11,6 +11,7 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -89,17 +90,23 @@ public class QuestionController {
 	@GetMapping("/modify/{id}")  // /modify?id=1
 	public String questionModify(QuestionForm questionForm, @PathVariable("id") Integer id, Principal principal) {
 		
+		// 수정하고자 하는 일련번호의 Question 엔티티 클래스객체생성
 		Question question = this.questionService.getQuestion(id);
+		
 		if(!question.getAuthor().getUsername().equals(principal.getName())) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "수정권한이 없습니다.");
 		}
 		
 		questionForm.setSubject(question.getSubject());
 		questionForm.setContent(question.getContent());
+		
+		
+		// QuestionForm questionForm Model 작업
 		return "question_form";
 				
 	}
 	
+	// 수정하기
 	@PreAuthorize("isAuthenticated()")
 	@PostMapping("/modify/{id}")
 	public String questionModify(@Valid QuestionForm questionForm, BindingResult bindingResult,
@@ -108,7 +115,10 @@ public class QuestionController {
 		if(bindingResult.hasErrors()) {
 			return "question_form";
 		}
+		
+		// 수정하고자 하는 내용을 db에서 읽어옴
 		Question question = this.questionService.getQuestion(id);
+		
 		if(!question.getAuthor().getUsername().equals(principal.getName())) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "수정권한이 없습니다.");
 		}
@@ -117,6 +127,17 @@ public class QuestionController {
 		return String.format("redirect:/question/detail/%s", id);
 	}
 	
+	
+	@PreAuthorize("isAuthenticated()")
+	@PostMapping("/delete/{id}")
+	public String questionDelete(Principal principal, @PathVariable("id") Integer id) {
+		Question question = this.questionService.getQuestion(id);
+		if(!question.getAuthor().getUsername().equals(principal.getName())) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "삭제권한이 없습니다.");
+		}
+		this.questionService.delete(question);
+		return "redirect:/";
+	}
 	
 	
 	

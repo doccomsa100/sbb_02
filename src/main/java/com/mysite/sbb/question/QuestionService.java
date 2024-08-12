@@ -37,15 +37,7 @@ public class QuestionService {
 		return this.questionRepository.findAll(pageable);
 	}
 	
-	// 상세, 수정
-	public Question getQuestion(Integer id) {
-		Optional<Question> question = this.questionRepository.findById(id);
-		if(question.isPresent()) {
-			return question.get();
-		}else {
-			throw new DataNotFoundException("question not found");
-		}
-	}
+	
 	
 	public void create(String subject, String content, SiteUser user) {
 		Question q = new Question();
@@ -56,12 +48,27 @@ public class QuestionService {
 		this.questionRepository.save(q);
 	}
 	
+	// 수정, 삭제 사용
+	public Question getQuestion(Integer id) {
+		Optional<Question> question = this.questionRepository.findById(id);
+		if(question.isPresent()) {
+			return question.get();
+		}else {
+			throw new DataNotFoundException("question not found");
+		}
+	}
+	
 	// 수정하기
 	public void modify(Question question, String subject, String content) {
 		question.setSubject(subject);
 		question.setContent(content);
 		question.setModifyDate(LocalDateTime.now());
 		this.questionRepository.save(question);
+	}
+	
+	// 삭제하기
+	public void delete(Question question) {
+		this.questionRepository.delete(question);
 	}
 	
 	
