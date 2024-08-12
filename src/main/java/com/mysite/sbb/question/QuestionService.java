@@ -37,6 +37,7 @@ public class QuestionService {
 		return this.questionRepository.findAll(pageable);
 	}
 	
+	// 상세, 수정
 	public Question getQuestion(Integer id) {
 		Optional<Question> question = this.questionRepository.findById(id);
 		if(question.isPresent()) {
@@ -53,6 +54,14 @@ public class QuestionService {
 		q.setCreateDate(LocalDateTime.now());
 		q.setAuthor(user); // 사용자정보
 		this.questionRepository.save(q);
+	}
+	
+	// 수정하기
+	public void modify(Question question, String subject, String content) {
+		question.setSubject(subject);
+		question.setContent(content);
+		question.setModifyDate(LocalDateTime.now());
+		this.questionRepository.save(question);
 	}
 	
 	

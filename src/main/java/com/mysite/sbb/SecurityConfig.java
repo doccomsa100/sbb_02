@@ -43,7 +43,7 @@ public class SecurityConfig {
 		return http.build();
 	}
 	
-	// 로그인 인증시 사용하는 bean
+	// 로그인 인증시 사용하는 bean.  
 	@Bean
 	AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
 		return authenticationConfiguration.getAuthenticationManager();
